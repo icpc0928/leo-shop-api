@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: leo-shop-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/leoshop
+    driver-class-name: org.postgresql.Driver
+    username: leo
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  security:
+    user:
+      name: admin
+      password: admin123
+
+app:
+  jwt:
+    secret: leo-shop-secret-key-for-jwt-token-generation-2026
+    expiration: 86400000
