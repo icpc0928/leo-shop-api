@@ -116,7 +116,12 @@ public class ProductService {
         product.setDescription(req.getDescription());
         product.setPrice(req.getPrice());
         product.setComparePrice(req.getComparePrice());
-        product.setImageUrl(req.getImageUrl());
+        if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
+            product.setImageUrls(String.join(",", req.getImageUrls()));
+            product.setImageUrl(req.getImageUrls().get(0));
+        } else if (req.getImageUrl() != null) {
+            product.setImageUrl(req.getImageUrl());
+        }
         product.setCategory(req.getCategory());
         product.setStock(req.getStock());
         if (req.getActive() != null) product.setActive(req.getActive());

@@ -37,6 +37,9 @@ public class Product {
 
     private String imageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String imageUrls;
+
     private String category;
 
     private Integer stock;

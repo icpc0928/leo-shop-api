@@ -22,7 +22,14 @@ spring:
       name: admin
       password: admin123
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+
 app:
+  upload:
+    dir: uploads/products
   jwt:
     secret: leo-shop-secret-key-for-jwt-token-generation-2026
     expiration: 86400000
