@@ -27,6 +27,11 @@ spring:
       max-file-size: 5MB
       max-request-size: 25MB
 
+nowpayments:
+  api-key: ${NOWPAYMENTS_API_KEY:sandbox-key}
+  ipn-secret: ${NOWPAYMENTS_IPN_SECRET:sandbox-secret}
+  base-url: ${NOWPAYMENTS_BASE_URL:https://api.nowpayments.io/v1}
+
 app:
   upload:
     dir: uploads/products

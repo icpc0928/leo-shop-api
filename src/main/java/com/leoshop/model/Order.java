@@ -47,6 +47,8 @@ public class Order {
     private String shippingAddress;
     private String paymentMethod;
 
+    private String cryptoPaymentId;
+
     @Column(columnDefinition = "TEXT")
     private String note;
 
@@ -63,6 +65,6 @@ public class Order {
     private LocalDateTime updatedAt;
 
     public enum OrderStatus {
-        PENDING, PROCESSING, SHIPPED, COMPLETED, CANCELLED
+        PENDING, PAID, PROCESSING, SHIPPED, COMPLETED, CANCELLED
     }
 }
