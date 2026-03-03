@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/payments/crypto/webhook").permitAll()
                 .requestMatchers("/api/payments/crypto/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/payment-methods").permitAll()
+                .requestMatchers("/api/crypto-orders/**").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/orders/**").authenticated()
                 .requestMatchers("/api/addresses/**").authenticated()

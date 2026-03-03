@@ -1,7 +1,9 @@
 package com.leoshop.config;
 
+import com.leoshop.model.PaymentMethod;
 import com.leoshop.model.Product;
 import com.leoshop.model.User;
+import com.leoshop.repository.PaymentMethodRepository;
 import com.leoshop.repository.ProductRepository;
 import com.leoshop.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -97,6 +100,22 @@ public class DataInitializer implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600,https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?w=600,https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=600")
             ));
             log.info("Mock products created");
+        }
+
+        // Default payment methods
+        if (paymentMethodRepository.count() == 0) {
+            paymentMethodRepository.saveAll(List.of(
+                PaymentMethod.builder()
+                    .name("Bitcoin").symbol("BTC").network("bitcoin")
+                    .gateway("direct").enabled(false).sortOrder(1).build(),
+                PaymentMethod.builder()
+                    .name("USDT (TRC-20)").symbol("USDT").network("tron")
+                    .gateway("direct").enabled(false).sortOrder(2).build(),
+                PaymentMethod.builder()
+                    .name("Ethereum").symbol("ETH").network("ethereum")
+                    .gateway("direct").enabled(false).sortOrder(3).build()
+            ));
+            log.info("Default payment methods created");
         }
     }
 
