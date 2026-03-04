@@ -39,7 +39,7 @@ public class BitcoinVerifier implements ChainVerifier {
                         long satoshis = output.get("value").asLong();
                         BigDecimal amount = BigDecimal.valueOf(satoshis)
                                 .divide(BigDecimal.valueOf(100_000_000), 8, RoundingMode.HALF_UP);
-                        if (amount.compareTo(expectedAmount) >= 0) {
+                        if (amount.compareTo(expectedAmount) == 0) {
                             return VerifyResult.builder().success(true).message("Verified").actualAmount(amount).build();
                         }
                         return VerifyResult.builder().success(false)

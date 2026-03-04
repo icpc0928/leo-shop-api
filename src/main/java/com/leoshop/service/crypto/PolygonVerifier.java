@@ -68,7 +68,7 @@ public class PolygonVerifier implements ChainVerifier {
                                     String data = logEntry.get("data").asText();
                                     BigDecimal amount = new BigDecimal(new java.math.BigInteger(data.substring(2), 16))
                                             .divide(BigDecimal.TEN.pow(18), 8, RoundingMode.HALF_UP);
-                                    if (amount.compareTo(expectedAmount) >= 0) {
+                                    if (amount.compareTo(expectedAmount) == 0) {
                                         return VerifyResult.builder().success(true).message("Verified").actualAmount(amount).build();
                                     }
                                     return VerifyResult.builder().success(false)

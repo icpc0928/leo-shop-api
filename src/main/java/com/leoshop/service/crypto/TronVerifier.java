@@ -57,7 +57,7 @@ public class TronVerifier implements ChainVerifier {
                             String valueStr = result.has("value") ? result.get("value").asText() : "0";
                             BigDecimal amount = new BigDecimal(valueStr)
                                     .divide(BigDecimal.TEN.pow(6), 8, RoundingMode.HALF_UP);
-                            if (amount.compareTo(expectedAmount) >= 0) {
+                            if (amount.compareTo(expectedAmount) == 0) {
                                 return VerifyResult.builder().success(true).message("Verified").actualAmount(amount).build();
                             }
                             return VerifyResult.builder().success(false)

@@ -10,7 +10,8 @@ import com.leoshop.repository.CryptoOrderRepository;
 import com.leoshop.repository.OrderRepository;
 import com.leoshop.service.crypto.CryptoVerifyService;
 import com.leoshop.service.crypto.VerifyResult;
-import lombok.RequiredArgsConstructor;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,17 +21,32 @@ import java.math.RoundingMode;
 import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
-// ThreadLocalRandom removed
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CryptoOrderService {
 
     private final CryptoOrderRepository cryptoOrderRepository;
     private final PaymentMethodService paymentMethodService;
     private final OrderRepository orderRepository;
     private final CryptoVerifyService cryptoVerifyService;
+
+    // Cache: key = "symbol:amount", value = true. Expires after 20 minutes.
+    private final Cache<String, Boolean> usedAmountCache = Caffeine.newBuilder()
+            .expireAfterWrite(20, TimeUnit.MINUTES)
+            .maximumSize(100_000)
+            .build();
+
+    public CryptoOrderService(CryptoOrderRepository cryptoOrderRepository,
+                               PaymentMethodService paymentMethodService,
+                               OrderRepository orderRepository,
+                               CryptoVerifyService cryptoVerifyService) {
+        this.cryptoOrderRepository = cryptoOrderRepository;
+        this.paymentMethodService = paymentMethodService;
+        this.orderRepository = orderRepository;
+        this.cryptoVerifyService = cryptoVerifyService;
+    }
 
     @Transactional
     public CryptoOrderResponse createOrder(Long orderId, Long paymentMethodId) {
@@ -49,8 +65,24 @@ public class CryptoOrderService {
         }
 
         // Calculate amount: TWD / exchangeRate
-        BigDecimal expectedAmount = order.getTotalAmount()
+        BigDecimal baseAmount = order.getTotalAmount()
                 .divide(method.getExchangeRate(), 8, RoundingMode.HALF_UP);
+
+        // Add random identifier: TWD 0.0001 ~ 0.9999 converted to crypto
+        // On collision, increment by 0.0001 TWD until unique within 20-min cache window
+        double randomTwd = 0.0001 + Math.random() * 0.9998;
+        BigDecimal incrementStep = BigDecimal.valueOf(0.0001)
+                .divide(method.getExchangeRate(), 8, RoundingMode.HALF_UP);
+        BigDecimal randomCrypto = BigDecimal.valueOf(randomTwd)
+                .divide(method.getExchangeRate(), 8, RoundingMode.HALF_UP);
+        BigDecimal expectedAmount = baseAmount.add(randomCrypto);
+
+        String cacheKey = method.getSymbol() + ":" + expectedAmount.toPlainString();
+        while (usedAmountCache.getIfPresent(cacheKey) != null) {
+            expectedAmount = expectedAmount.add(incrementStep);
+            cacheKey = method.getSymbol() + ":" + expectedAmount.toPlainString();
+        }
+        usedAmountCache.put(cacheKey, Boolean.TRUE);
 
         CryptoOrder cryptoOrder = CryptoOrder.builder()
                 .orderId(orderId)
