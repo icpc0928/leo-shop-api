@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Order> {
     Page<Order> findByUser(User user, Pageable pageable);
     Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
     Optional<Order> findByOrderNumber(String orderNumber);

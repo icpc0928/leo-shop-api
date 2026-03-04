@@ -3,6 +3,7 @@ package com.leoshop.service.crypto;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,6 +17,9 @@ public class PolygonVerifier implements ChainVerifier {
 
     private final RestTemplate restTemplate;
 
+    @Value("${etherscan.api-key:}")
+    private String apiKey;
+
     @Override
     public String getNetwork() {
         return "polygon";
@@ -24,7 +28,14 @@ public class PolygonVerifier implements ChainVerifier {
     @Override
     public VerifyResult verify(String txHash, String expectedWallet, String contractAddress, BigDecimal expectedAmount) {
         try {
-            String url = "https://api.polygonscan.com/api?module=proxy&action=eth_getTransactionReceipt&txhash=" + txHash;
+            // Etherscan API V2: chainid=137 for Polygon
+            String url = "https://api.etherscan.io/v2/api?chainid=137"
+                    + "&module=proxy&action=eth_getTransactionReceipt&txhash=" + txHash;
+            if (apiKey != null && !apiKey.isBlank()) {
+                url += "&apikey=" + apiKey;
+            }
+
+            log.info("Polygon verify URL: {}", url);
             JsonNode response = restTemplate.getForObject(url, JsonNode.class);
 
             if (response == null || response.get("result") == null || response.get("result").isNull()) {
@@ -32,6 +43,12 @@ public class PolygonVerifier implements ChainVerifier {
             }
 
             JsonNode result = response.get("result");
+
+            // Check if it's an error message string
+            if (result.isTextual()) {
+                return VerifyResult.builder().success(false).message("API error: " + result.asText()).build();
+            }
+
             String status = result.has("status") ? result.get("status").asText() : "";
             if (!"0x1".equals(status)) {
                 return VerifyResult.builder().success(false).message("Transaction failed on chain").build();
@@ -65,7 +82,7 @@ public class PolygonVerifier implements ChainVerifier {
                 return VerifyResult.builder().success(false).message("No matching transfer log found").build();
             }
 
-            // Native token (MATIC)
+            // Native token (POL/MATIC)
             String to = result.has("to") ? result.get("to").asText() : "";
             if (!to.equalsIgnoreCase(expectedWallet)) {
                 return VerifyResult.builder().success(false).message("Recipient mismatch").build();

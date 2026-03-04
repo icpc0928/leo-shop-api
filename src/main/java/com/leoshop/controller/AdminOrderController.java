@@ -16,9 +16,12 @@ public class AdminOrderController {
     @GetMapping
     public ResponseEntity<OrderListResponse> getAllOrders(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String orderNumber,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(orderService.getAllOrders(status, page, size));
+        return ResponseEntity.ok(orderService.getAllOrders(status, orderNumber, startDate, endDate, page, size));
     }
 
     @GetMapping("/{id}")

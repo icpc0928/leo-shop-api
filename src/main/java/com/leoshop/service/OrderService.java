@@ -81,15 +81,41 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found")));
     }
 
-    public OrderListResponse getAllOrders(String status, int page, int size) {
+    public OrderListResponse getAllOrders(String status, String orderNumber, String startDate, String endDate, int page, int size) {
         Page<Order> orders;
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        if (status != null && !status.isEmpty()) {
-            orders = orderRepository.findByStatus(Order.OrderStatus.valueOf(status), pageable);
+        
+        // Build specification for filtering
+        if (orderNumber != null || startDate != null || endDate != null || status != null) {
+            orders = orderRepository.findAll(buildOrderSpecification(status, orderNumber, startDate, endDate), pageable);
         } else {
             orders = orderRepository.findAll(pageable);
         }
         return toListResponse(orders, page);
+    }
+    
+    private org.springframework.data.jpa.domain.Specification<Order> buildOrderSpecification(
+            String status, String orderNumber, String startDate, String endDate) {
+        return (root, query, cb) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            
+            if (status != null && !status.isEmpty()) {
+                predicates.add(cb.equal(root.get("status"), Order.OrderStatus.valueOf(status)));
+            }
+            if (orderNumber != null && !orderNumber.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("orderNumber")), "%" + orderNumber.toLowerCase() + "%"));
+            }
+            if (startDate != null && !startDate.isEmpty()) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), 
+                    java.time.LocalDate.parse(startDate).atStartOfDay()));
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), 
+                    java.time.LocalDate.parse(endDate).atTime(23, 59, 59)));
+            }
+            
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
     }
 
     @Transactional

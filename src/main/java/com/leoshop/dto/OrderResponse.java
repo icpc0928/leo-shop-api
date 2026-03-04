@@ -22,6 +22,7 @@ public class OrderResponse {
     private String shippingEmail;
     private String shippingAddress;
     private String paymentMethod;
+    private String cryptoPaymentId;
     private String note;
     private List<Item> items;
     private LocalDateTime createdAt;
@@ -45,7 +46,7 @@ public class OrderResponse {
                 .totalAmount(o.getTotalAmount()).shippingFee(o.getShippingFee())
                 .shippingName(o.getShippingName()).shippingPhone(o.getShippingPhone())
                 .shippingEmail(o.getShippingEmail()).shippingAddress(o.getShippingAddress())
-                .paymentMethod(o.getPaymentMethod()).note(o.getNote())
+                .paymentMethod(o.getPaymentMethod()).cryptoPaymentId(o.getCryptoPaymentId()).note(o.getNote())
                 .items(o.getItems().stream().map(OrderResponse::mapItem).toList())
                 .createdAt(o.getCreatedAt()).updatedAt(o.getUpdatedAt())
                 .build();

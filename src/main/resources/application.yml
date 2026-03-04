@@ -32,6 +32,9 @@ nowpayments:
   ipn-secret: ${NOWPAYMENTS_IPN_SECRET:sandbox-secret}
   base-url: ${NOWPAYMENTS_BASE_URL:https://api.nowpayments.io/v1}
 
+etherscan:
+  api-key: ${ETHERSCAN_API_KEY:Q57FT849EX8G9GYBVUDCK19JJ56219T7YE}
+
 app:
   upload:
     dir: uploads/products

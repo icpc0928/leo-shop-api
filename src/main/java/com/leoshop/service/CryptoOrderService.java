@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
 // ThreadLocalRandom removed
@@ -67,7 +68,7 @@ public class CryptoOrderService {
         order.setCryptoPaymentId(String.valueOf(cryptoOrder.getId()));
         orderRepository.save(order);
 
-        return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+        return CryptoOrderResponse.from(cryptoOrder, method);
     }
 
     @Transactional
@@ -76,6 +77,12 @@ public class CryptoOrderService {
 
         if (!"pending".equals(cryptoOrder.getVerifyStatus())) {
             throw new BadRequestException("Order is not in pending status");
+        }
+
+        // Prevent duplicate txHash usage
+        Optional<CryptoOrder> existing = cryptoOrderRepository.findByTxHash(txHash);
+        if (existing.isPresent() && !existing.get().getId().equals(cryptoOrderId)) {
+            throw new BadRequestException("This transaction hash has already been used for another order");
         }
 
         cryptoOrder.setTxHash(txHash);
@@ -102,27 +109,82 @@ public class CryptoOrderService {
                 cryptoOrder.setVerifyMessage(result.getMessage());
             }
             cryptoOrderRepository.save(cryptoOrder);
-            return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+            return CryptoOrderResponse.from(cryptoOrder, method);
         } catch (Exception e) {
             log.warn("Auto-verify failed for crypto order {}: {}", cryptoOrderId, e.getMessage());
             // Leave as pending, admin can manually verify
             PaymentMethod method = paymentMethodService.findById(cryptoOrder.getPaymentMethodId());
-            return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+            return CryptoOrderResponse.from(cryptoOrder, method);
         }
     }
 
     public CryptoOrderResponse getStatus(Long cryptoOrderId) {
         CryptoOrder cryptoOrder = findEntity(cryptoOrderId);
         PaymentMethod method = paymentMethodService.findById(cryptoOrder.getPaymentMethodId());
-        return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+        return CryptoOrderResponse.from(cryptoOrder, method);
     }
 
-    public List<CryptoOrderResponse> getAll() {
-        return cryptoOrderRepository.findAll().stream()
+    public com.leoshop.dto.CryptoOrderListResponse getAll(
+            String status, String orderNumber, String txHash, 
+            String startDate, String endDate, int page, int size) {
+        
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+            page, size, org.springframework.data.domain.Sort.by("id").descending());
+        
+        org.springframework.data.domain.Page<CryptoOrder> orders;
+        
+        if (status != null || orderNumber != null || txHash != null || startDate != null || endDate != null) {
+            orders = cryptoOrderRepository.findAll(
+                buildCryptoOrderSpecification(status, orderNumber, txHash, startDate, endDate), pageable);
+        } else {
+            orders = cryptoOrderRepository.findAll(pageable);
+        }
+        
+        var content = orders.getContent().stream()
                 .map(o -> {
                     PaymentMethod m = paymentMethodService.findById(o.getPaymentMethodId());
-                    return CryptoOrderResponse.from(o, m.getExplorerUrl());
+                    String orderNum = orderRepository.findById(o.getOrderId())
+                            .map(Order::getOrderNumber).orElse(null);
+                    return CryptoOrderResponse.from(o, m.getExplorerUrl(), orderNum, m.getContractAddress());
                 }).toList();
+        
+        return com.leoshop.dto.CryptoOrderListResponse.builder()
+                .content(content)
+                .totalPages(orders.getTotalPages())
+                .totalElements(orders.getTotalElements())
+                .currentPage(page)
+                .build();
+    }
+    
+    private org.springframework.data.jpa.domain.Specification<CryptoOrder> buildCryptoOrderSpecification(
+            String status, String orderNumber, String txHash, String startDate, String endDate) {
+        return (root, query, cb) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            
+            if (status != null && !status.isEmpty()) {
+                predicates.add(cb.equal(root.get("verifyStatus"), status));
+            }
+            if (orderNumber != null && !orderNumber.isEmpty()) {
+                var subquery = query.subquery(Long.class);
+                var subRoot = subquery.from(Order.class);
+                subquery.select(subRoot.get("id"))
+                        .where(cb.like(cb.lower(subRoot.get("orderNumber")), "%" + orderNumber.toLowerCase() + "%"));
+                predicates.add(root.get("orderId").in(subquery));
+            }
+            if (txHash != null && !txHash.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("txHash")), "%" + txHash.toLowerCase() + "%"));
+            }
+            if (startDate != null && !startDate.isEmpty()) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), 
+                    java.time.LocalDate.parse(startDate).atStartOfDay()));
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), 
+                    java.time.LocalDate.parse(endDate).atTime(23, 59, 59)));
+            }
+            
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
     }
 
     @Transactional
@@ -149,7 +211,7 @@ public class CryptoOrderService {
             cryptoOrder.setVerifyMessage(result.getMessage());
         }
         cryptoOrderRepository.save(cryptoOrder);
-        return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+        return CryptoOrderResponse.from(cryptoOrder, method);
     }
 
     @Transactional
@@ -167,7 +229,7 @@ public class CryptoOrderService {
         }
 
         PaymentMethod method = paymentMethodService.findById(cryptoOrder.getPaymentMethodId());
-        return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+        return CryptoOrderResponse.from(cryptoOrder, method);
     }
 
     @Transactional
@@ -179,7 +241,7 @@ public class CryptoOrderService {
         cryptoOrderRepository.save(cryptoOrder);
 
         PaymentMethod method = paymentMethodService.findById(cryptoOrder.getPaymentMethodId());
-        return CryptoOrderResponse.from(cryptoOrder, method.getExplorerUrl());
+        return CryptoOrderResponse.from(cryptoOrder, method);
     }
 
     private CryptoOrder findEntity(Long id) {
