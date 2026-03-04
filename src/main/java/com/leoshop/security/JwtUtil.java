@@ -1,5 +1,6 @@
 package com.leoshop.security;
 
+import com.leoshop.model.AdminUser;
 import com.leoshop.model.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -27,6 +28,19 @@ public class JwtUtil {
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("role", user.getRole().name())
+                .claim("userType", "user")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateAdminToken(AdminUser admin) {
+        return Jwts.builder()
+                .subject(admin.getEmail())
+                .claim("userId", admin.getId())
+                .claim("role", admin.getRole())
+                .claim("userType", "admin")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(key)
@@ -50,6 +64,12 @@ public class JwtUtil {
     public String getRoleFromToken(String token) {
         return Jwts.parser().verifyWith(key).build()
                 .parseSignedClaims(token).getPayload().get("role", String.class);
+    }
+
+    public String getUserTypeFromToken(String token) {
+        String userType = Jwts.parser().verifyWith(key).build()
+                .parseSignedClaims(token).getPayload().get("userType", String.class);
+        return userType != null ? userType : "user";
     }
 
     public Long getUserIdFromToken(String token) {

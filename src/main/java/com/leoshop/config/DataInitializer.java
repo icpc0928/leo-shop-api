@@ -1,8 +1,12 @@
 package com.leoshop.config;
 
+import com.leoshop.model.AdminUser;
+import com.leoshop.model.ExchangeRate;
 import com.leoshop.model.PaymentMethod;
 import com.leoshop.model.Product;
 import com.leoshop.model.User;
+import com.leoshop.repository.AdminUserRepository;
+import com.leoshop.repository.ExchangeRateRepository;
 import com.leoshop.repository.PaymentMethodRepository;
 import com.leoshop.repository.ProductRepository;
 import com.leoshop.repository.UserRepository;
@@ -21,19 +25,21 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final AdminUserRepository adminUserRepository;
     private final ProductRepository productRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final ExchangeRateRepository exchangeRateRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
-        // Admin user
-        if (!userRepository.existsByEmail("admin@leoshop.com")) {
-            userRepository.save(User.builder()
+        // Admin user (in admin_users table)
+        if (adminUserRepository.count() == 0) {
+            adminUserRepository.save(AdminUser.builder()
                     .name("Admin").email("admin@leoshop.com")
                     .password(passwordEncoder.encode("admin123"))
-                    .role(User.Role.ADMIN).build());
-            log.info("Default admin user created: admin@leoshop.com");
+                    .role("ADMIN").build());
+            log.info("Default admin user created in admin_users: admin@leoshop.com");
         }
 
         // Mock users
@@ -116,6 +122,23 @@ public class DataInitializer implements CommandLineRunner {
                     .gateway("direct").enabled(false).sortOrder(3).build()
             ));
             log.info("Default payment methods created");
+        }
+
+        // Default exchange rates (TWD-based)
+        if (exchangeRateRepository.count() == 0) {
+            exchangeRateRepository.saveAll(List.of(
+                ExchangeRate.builder().currency("USD").rate(BigDecimal.valueOf(0.031)).build(),
+                ExchangeRate.builder().currency("JPY").rate(BigDecimal.valueOf(4.67)).build(),
+                ExchangeRate.builder().currency("EUR").rate(BigDecimal.valueOf(0.029)).build(),
+                ExchangeRate.builder().currency("GBP").rate(BigDecimal.valueOf(0.025)).build(),
+                ExchangeRate.builder().currency("CNY").rate(BigDecimal.valueOf(0.22)).build(),
+                ExchangeRate.builder().currency("KRW").rate(BigDecimal.valueOf(42.5)).build(),
+                ExchangeRate.builder().currency("THB").rate(BigDecimal.valueOf(1.07)).build(),
+                ExchangeRate.builder().currency("VND").rate(BigDecimal.valueOf(780)).build(),
+                ExchangeRate.builder().currency("SGD").rate(BigDecimal.valueOf(0.041)).build(),
+                ExchangeRate.builder().currency("HKD").rate(BigDecimal.valueOf(0.24)).build()
+            ));
+            log.info("Default exchange rates created");
         }
     }
 

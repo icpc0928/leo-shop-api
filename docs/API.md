@@ -29,6 +29,8 @@ Authorization: Bearer <token>
 7. [訂單管理 API（Admin）](#7-訂單管理-apiadmin)
 8. [地址 API](#8-地址-api)
 9. [Dashboard API（Admin）](#9-dashboard-apiadmin)
+10. [管理員管理 API（Admin）](#10-管理員管理-apiadmin)
+11. [支付方式管理 API（Admin）](#11-支付方式管理-apiadmin)
 
 ---
 
@@ -869,6 +871,235 @@ Authorization: Bearer <admin-token>
 
 ---
 
+## 10. 管理員管理 API（Admin）
+
+### `GET /api/admin/admin-users` 🔑
+
+取得所有管理員列表。
+
+**Request Headers：**
+```
+Authorization: Bearer <admin-token>
+```
+
+**成功 Response（200）：**
+```json
+[
+  {
+    "id": 1,
+    "email": "admin@leoshop.com",
+    "name": "Admin",
+    "createdAt": "2026-02-11T10:00:00"
+  }
+]
+```
+
+| Status Code | 說明 |
+|-------------|------|
+| 200 | 成功 |
+| 401 | 未認證 |
+| 403 | 非 ADMIN 角色 |
+
+---
+
+### `POST /api/admin/admin-users` 🔑
+
+新增管理員帳號。
+
+**Request Headers：**
+```
+Authorization: Bearer <admin-token>
+```
+
+**Request Body：**
+```json
+{
+  "email": "newadmin@leoshop.com",
+  "password": "password123",
+  "name": "New Admin"
+}
+```
+
+**成功 Response（200）：**
+```json
+{
+  "id": 2,
+  "email": "newadmin@leoshop.com",
+  "name": "New Admin",
+  "createdAt": "2026-03-04T10:00:00"
+}
+```
+
+**錯誤 Response（400）：**
+```json
+{
+  "error": "Email already exists"
+}
+```
+
+| Status Code | 說明 |
+|-------------|------|
+| 200 | 新增成功 |
+| 400 | Email 已存在或驗證失敗 |
+| 401 | 未認證 |
+| 403 | 非 ADMIN 角色 |
+
+---
+
+### `PUT /api/admin/admin-users/{id}` 🔑
+
+更新管理員資料。
+
+**Request Headers：**
+```
+Authorization: Bearer <admin-token>
+```
+
+**Request Body：**
+```json
+{
+  "email": "updated@leoshop.com",
+  "name": "Updated Name",
+  "password": "newpassword123"
+}
+```
+
+> `password` 為選填，若不提供則不更新密碼。
+
+**成功 Response（200）：**
+```json
+{
+  "id": 2,
+  "email": "updated@leoshop.com",
+  "name": "Updated Name",
+  "createdAt": "2026-03-04T10:00:00"
+}
+```
+
+| Status Code | 說明 |
+|-------------|------|
+| 200 | 更新成功 |
+| 400 | 驗證失敗 |
+| 401 | 未認證 |
+| 403 | 非 ADMIN 角色 |
+| 404 | 管理員不存在 |
+
+---
+
+### `DELETE /api/admin/admin-users/{id}` 🔑
+
+刪除管理員帳號。
+
+**Request Headers：**
+```
+Authorization: Bearer <admin-token>
+```
+
+**成功 Response：** 204 No Content
+
+| Status Code | 說明 |
+|-------------|------|
+| 204 | 刪除成功 |
+| 401 | 未認證 |
+| 403 | 非 ADMIN 角色 |
+| 404 | 管理員不存在 |
+
+---
+
+## 11. 支付方式管理 API（Admin）
+
+### `POST /api/admin/payment-methods/refresh-rates` 🔑
+
+刷新所有加密貨幣匯率（呼叫 CoinGecko API）。
+
+**Request Headers：**
+```
+Authorization: Bearer <admin-token>
+```
+
+**成功 Response（200）：**
+```json
+{
+  "message": "Rates refreshed successfully",
+  "updatedCount": 3,
+  "timestamp": "2026-03-04T10:00:00"
+}
+```
+
+**錯誤 Response（500）：**
+```json
+{
+  "error": "Failed to fetch rates from CoinGecko API"
+}
+```
+
+| Status Code | 說明 |
+|-------------|------|
+| 200 | 刷新成功 |
+| 401 | 未認證 |
+| 403 | 非 ADMIN 角色 |
+| 500 | API 呼叫失敗 |
+
+---
+
+### `GET /api/orders/shipping-fee` 🌐
+
+查詢運費（公開 API，根據商品小計計算）。
+
+**Query Parameters：**
+
+| 參數 | 類型 | 必填 | 說明 |
+|------|------|------|------|
+| `subtotal` | decimal | 是 | 商品小計金額 |
+
+**範例：**
+```
+GET /api/orders/shipping-fee?subtotal=1500
+```
+
+**成功 Response（200）：**
+```json
+{
+  "subtotal": 1500.00,
+  "shippingFee": 0.00,
+  "freeShippingThreshold": 1000.00,
+  "message": "Free shipping (order >= NT$1000)"
+}
+```
+
+**範例（未達免運）：**
+```
+GET /api/orders/shipping-fee?subtotal=800
+```
+
+**成功 Response（200）：**
+```json
+{
+  "subtotal": 800.00,
+  "shippingFee": 60.00,
+  "freeShippingThreshold": 1000.00,
+  "message": "Add NT$200 more for free shipping"
+}
+```
+
+| Status Code | 說明 |
+|-------------|------|
+| 200 | 成功 |
+| 400 | subtotal 參數缺失或格式錯誤 |
+
+---
+
+## CORS 設定更新
+
+後端 CORS 設定已更新，支援以下 HTTP 方法：
+```
+GET, POST, PUT, DELETE, PATCH, OPTIONS
+```
+
+前端可使用 `PATCH` 方法進行局部更新操作。
+
+---
+
 ## API 端點總覽
 
 | Method | URL | 認證 | 說明 |
@@ -899,3 +1130,9 @@ Authorization: Bearer <admin-token>
 | PUT | `/api/addresses/{id}/default` | 🔓 | 設定預設地址 |
 | GET | `/api/admin/dashboard/stats` | 🔑 | 統計數據 |
 | GET | `/api/admin/dashboard/revenue` | 🔑 | 營收趨勢 |
+| GET | `/api/admin/admin-users` | 🔑 | 管理員列表 |
+| POST | `/api/admin/admin-users` | 🔑 | 新增管理員 |
+| PUT | `/api/admin/admin-users/{id}` | 🔑 | 更新管理員 |
+| DELETE | `/api/admin/admin-users/{id}` | 🔑 | 刪除管理員 |
+| POST | `/api/admin/payment-methods/refresh-rates` | 🔑 | 刷新加密貨幣匯率 |
+| GET | `/api/orders/shipping-fee` | 🌐 | 查詢運費 |

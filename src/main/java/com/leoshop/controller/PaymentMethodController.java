@@ -2,12 +2,14 @@ package com.leoshop.controller;
 
 import com.leoshop.dto.PaymentMethodRequest;
 import com.leoshop.dto.PaymentMethodResponse;
+import com.leoshop.service.CryptoRateService;
 import com.leoshop.service.PaymentMethodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/payment-methods")
@@ -15,6 +17,7 @@ import java.util.List;
 public class PaymentMethodController {
 
     private final PaymentMethodService paymentMethodService;
+    private final CryptoRateService cryptoRateService;
 
     @GetMapping
     public ResponseEntity<List<PaymentMethodResponse>> getAll() {
@@ -40,5 +43,11 @@ public class PaymentMethodController {
     @PatchMapping("/{id}/toggle")
     public ResponseEntity<PaymentMethodResponse> toggle(@PathVariable Long id) {
         return ResponseEntity.ok(paymentMethodService.toggle(id));
+    }
+
+    @PostMapping("/refresh-rates")
+    public ResponseEntity<Map<String, String>> refreshRates() {
+        cryptoRateService.refreshApiRates();
+        return ResponseEntity.ok(Map.of("message", "Crypto rates refreshed from CoinGecko API"));
     }
 }

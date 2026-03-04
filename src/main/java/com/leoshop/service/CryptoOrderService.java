@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+// ThreadLocalRandom removed
 
 @Slf4j
 @Service
@@ -47,12 +47,9 @@ public class CryptoOrderService {
             throw new BadRequestException("Wallet address not configured");
         }
 
-        // Calculate amount: TWD / exchangeRate + random identifier
-        BigDecimal baseAmount = order.getTotalAmount()
+        // Calculate amount: TWD / exchangeRate
+        BigDecimal expectedAmount = order.getTotalAmount()
                 .divide(method.getExchangeRate(), 8, RoundingMode.HALF_UP);
-        double randomId = ThreadLocalRandom.current().nextDouble(0.0001, 0.0099);
-        BigDecimal expectedAmount = baseAmount.add(BigDecimal.valueOf(randomId))
-                .setScale(4, RoundingMode.HALF_UP);
 
         CryptoOrder cryptoOrder = CryptoOrder.builder()
                 .orderId(orderId)
@@ -158,7 +155,7 @@ public class CryptoOrderService {
     @Transactional
     public CryptoOrderResponse manualConfirm(Long cryptoOrderId) {
         CryptoOrder cryptoOrder = findEntity(cryptoOrderId);
-        cryptoOrder.setVerifyStatus("manual");
+        cryptoOrder.setVerifyStatus("verified");
         cryptoOrder.setVerifyMessage("Manually confirmed by admin");
         cryptoOrder.setVerifiedAt(LocalDateTime.now());
         cryptoOrderRepository.save(cryptoOrder);

@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -39,6 +42,19 @@ public class OrderController {
     @PutMapping("/{id}/cancel")
     public ResponseEntity<OrderResponse> cancelOrder(Authentication auth, @PathVariable Long id) {
         return ResponseEntity.ok(orderService.cancelOrder(id, getUserId(auth)));
+    }
+
+    @GetMapping("/shipping-fee")
+    public ResponseEntity<Map<String, Object>> getShippingFee(@RequestParam BigDecimal subtotal) {
+        BigDecimal freeThreshold = BigDecimal.valueOf(2000);
+        BigDecimal fee = subtotal.compareTo(freeThreshold) >= 0
+                ? BigDecimal.ZERO : BigDecimal.valueOf(100);
+        return ResponseEntity.ok(Map.of(
+                "shippingFee", fee,
+                "freeThreshold", freeThreshold,
+                "subtotal", subtotal,
+                "total", subtotal.add(fee)
+        ));
     }
 
     private Long getUserId(Authentication auth) {
