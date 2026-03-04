@@ -1,7 +1,9 @@
 package com.leoshop.controller;
 
+import com.leoshop.dto.ExchangeRatesResponse;
 import com.leoshop.model.ExchangeRate;
 import com.leoshop.service.ExchangeRateService;
+import com.leoshop.service.SystemSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,13 +19,18 @@ import java.util.Map;
 public class ExchangeRateController {
 
     private final ExchangeRateService service;
+    private final SystemSettingsService systemSettingsService;
 
     @GetMapping
-    public Map<String, BigDecimal> getAllRates() {
+    public ExchangeRatesResponse getAllRates() {
         Map<String, BigDecimal> map = new LinkedHashMap<>();
         for (ExchangeRate er : service.getAllRates()) {
             map.put(er.getCurrency(), er.getRate());
         }
-        return map;
+        String baseCurrency = systemSettingsService.getSetting("base_currency", "TWD");
+        return ExchangeRatesResponse.builder()
+                .baseCurrency(baseCurrency)
+                .rates(map)
+                .build();
     }
 }

@@ -23,6 +23,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ProductService productService;
+    private final SystemSettingsService systemSettingsService;
 
     @Transactional
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
@@ -61,8 +62,10 @@ public class OrderService {
             totalAmount = totalAmount.add(subtotal);
         }
 
-        BigDecimal shippingFee = totalAmount.compareTo(BigDecimal.valueOf(2000)) >= 0
-                ? BigDecimal.ZERO : BigDecimal.valueOf(100);
+        BigDecimal freeThreshold = systemSettingsService.getSettingAsDecimal("free_shipping_threshold", "2000");
+        BigDecimal shippingFeeAmount = systemSettingsService.getSettingAsDecimal("shipping_fee", "100");
+        BigDecimal shippingFee = totalAmount.compareTo(freeThreshold) >= 0
+                ? BigDecimal.ZERO : shippingFeeAmount;
         order.setTotalAmount(totalAmount.add(shippingFee));
         order.setShippingFee(shippingFee);
 

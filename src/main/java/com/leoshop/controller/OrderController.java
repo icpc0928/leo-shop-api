@@ -19,6 +19,7 @@ public class OrderController {
 
     private final OrderService orderService;
     private final UserRepository userRepository;
+    private final SystemSettingsService systemSettingsService;
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(Authentication auth, @RequestBody CreateOrderRequest request) {
@@ -46,9 +47,10 @@ public class OrderController {
 
     @GetMapping("/shipping-fee")
     public ResponseEntity<Map<String, Object>> getShippingFee(@RequestParam BigDecimal subtotal) {
-        BigDecimal freeThreshold = BigDecimal.valueOf(2000);
+        BigDecimal freeThreshold = systemSettingsService.getSettingAsDecimal("free_shipping_threshold", "2000");
+        BigDecimal shippingFeeAmount = systemSettingsService.getSettingAsDecimal("shipping_fee", "100");
         BigDecimal fee = subtotal.compareTo(freeThreshold) >= 0
-                ? BigDecimal.ZERO : BigDecimal.valueOf(100);
+                ? BigDecimal.ZERO : shippingFeeAmount;
         return ResponseEntity.ok(Map.of(
                 "shippingFee", fee,
                 "freeThreshold", freeThreshold,

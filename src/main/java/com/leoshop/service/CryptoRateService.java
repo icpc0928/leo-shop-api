@@ -21,6 +21,7 @@ public class CryptoRateService {
 
     private final PaymentMethodRepository paymentMethodRepository;
     private final RestTemplate restTemplate;
+    private final SystemSettingsService systemSettingsService;
 
     private static final Map<String, String> SYMBOL_TO_COINGECKO_ID = Map.of(
         "BTC", "bitcoin",
@@ -62,8 +63,9 @@ public class CryptoRateService {
         }
 
         try {
+            String baseCurrency = systemSettingsService.getSetting("base_currency", "TWD").toLowerCase();
             String ids = String.join(",", idToSymbol.keySet());
-            String url = "https://api.coingecko.com/api/v3/simple/price?ids=" + ids + "&vs_currencies=twd";
+            String url = "https://api.coingecko.com/api/v3/simple/price?ids=" + ids + "&vs_currencies=" + baseCurrency;
             JsonNode response = restTemplate.getForObject(url, JsonNode.class);
 
             if (response == null) {
@@ -76,8 +78,8 @@ public class CryptoRateService {
                 String id = entry.getKey();
                 String symbol = entry.getValue();
                 JsonNode priceNode = response.get(id);
-                if (priceNode != null && priceNode.has("twd")) {
-                    BigDecimal rate = BigDecimal.valueOf(priceNode.get("twd").asDouble());
+                if (priceNode != null && priceNode.has(baseCurrency)) {
+                    BigDecimal rate = BigDecimal.valueOf(priceNode.get(baseCurrency).asDouble());
                     
                     // Update all payment methods with this symbol and rateSource=api
                     for (PaymentMethod m : apiMethods) {
@@ -85,7 +87,7 @@ public class CryptoRateService {
                             m.setExchangeRate(rate);
                             paymentMethodRepository.save(m);
                             updated++;
-                            log.info("Updated {} rate to {} TWD", symbol, rate);
+                            log.info("Updated {} rate to {} {}", symbol, rate, baseCurrency.toUpperCase());
                         }
                     }
                 }

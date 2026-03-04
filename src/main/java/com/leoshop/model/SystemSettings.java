@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,22 +14,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "exchange_rates")
-public class ExchangeRate {
+@Table(name = "system_settings")
+public class SystemSettings {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 10)
-    private String currency;
+    @Column(unique = true, nullable = false, length = 100)
+    private String settingKey;
 
-    @Column(nullable = false, precision = 20, scale = 10)
-    private BigDecimal rate;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean baseCurrency = false;
+    @Column(nullable = false, length = 500)
+    private String settingValue;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
