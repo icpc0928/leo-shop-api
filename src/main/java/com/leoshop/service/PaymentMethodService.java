@@ -18,7 +18,7 @@ public class PaymentMethodService {
     private final PaymentMethodRepository paymentMethodRepository;
 
     public List<PaymentMethodResponse> getAll() {
-        return paymentMethodRepository.findAll().stream()
+        return paymentMethodRepository.findAll(org.springframework.data.domain.Sort.by("name")).stream()
                 .map(PaymentMethodResponse::from).toList();
     }
 

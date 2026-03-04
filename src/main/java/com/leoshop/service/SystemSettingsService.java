@@ -4,8 +4,10 @@ import com.leoshop.dto.SystemSettingsRequest;
 import com.leoshop.dto.SystemSettingsResponse;
 import com.leoshop.exception.BadRequestException;
 import com.leoshop.model.ExchangeRate;
+import com.leoshop.model.PaymentMethod;
 import com.leoshop.model.SystemSettings;
 import com.leoshop.repository.ExchangeRateRepository;
+import com.leoshop.repository.PaymentMethodRepository;
 import com.leoshop.repository.SystemSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ public class SystemSettingsService {
 
     private final SystemSettingsRepository systemSettingsRepository;
     private final ExchangeRateRepository exchangeRateRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     @PostConstruct
     public void init() {
@@ -130,10 +133,21 @@ public class SystemSettingsService {
         }
 
         exchangeRateRepository.saveAll(allRates);
+
+        // Recalculate payment methods' exchange rates
+        List<PaymentMethod> paymentMethods = paymentMethodRepository.findAll();
+        for (PaymentMethod pm : paymentMethods) {
+            if (pm.getExchangeRate() != null && pm.getExchangeRate().compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal newRate = pm.getExchangeRate().divide(oldBaseRate, 10, RoundingMode.HALF_UP);
+                pm.setExchangeRate(newRate);
+            }
+        }
+        paymentMethodRepository.saveAll(paymentMethods);
+
         updateSetting("base_currency", newCurrency);
 
-        log.info("Updated base currency from {} to {}, recalculated {} rates", 
-                oldCurrency, newCurrency, allRates.size());
+        log.info("Updated base currency from {} to {}, recalculated {} exchange rates and {} payment methods", 
+                oldCurrency, newCurrency, allRates.size(), paymentMethods.size());
     }
 
     public String getSetting(String key, String defaultValue) {
