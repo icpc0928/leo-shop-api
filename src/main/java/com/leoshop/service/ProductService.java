@@ -19,6 +19,10 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     public ProductListResponse getAllProducts(String category, String keyword, String sort, int page, int size) {
+        return getAllProducts(category, keyword, sort, page, size, false);
+    }
+
+    public ProductListResponse getAllProducts(String category, String keyword, String sort, int page, int size, boolean includeInactive) {
         Sort sortOrder = Sort.by("createdAt").descending();
         if (sort != null) {
             sortOrder = switch (sort) {
@@ -36,14 +40,28 @@ public class ProductService {
         boolean hasCategory = category != null && !category.isBlank();
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
-        if (hasCategory && hasKeyword) {
-            products = productRepository.findByActiveTrueAndCategoryAndNameContaining(category, keyword, pageable);
-        } else if (hasCategory) {
-            products = productRepository.findByActiveTrueAndCategory(category, pageable);
-        } else if (hasKeyword) {
-            products = productRepository.findByActiveTrueAndNameContaining(keyword, pageable);
+        if (includeInactive) {
+            // Admin: show all products
+            if (hasCategory && hasKeyword) {
+                products = productRepository.findByCategoryAndNameContaining(category, keyword, pageable);
+            } else if (hasCategory) {
+                products = productRepository.findByCategory(category, pageable);
+            } else if (hasKeyword) {
+                products = productRepository.findByNameContaining(keyword, pageable);
+            } else {
+                products = productRepository.findAll(pageable);
+            }
         } else {
-            products = productRepository.findByActiveTrue(pageable);
+            // Public: only active products
+            if (hasCategory && hasKeyword) {
+                products = productRepository.findByActiveTrueAndCategoryAndNameContaining(category, keyword, pageable);
+            } else if (hasCategory) {
+                products = productRepository.findByActiveTrueAndCategory(category, pageable);
+            } else if (hasKeyword) {
+                products = productRepository.findByActiveTrueAndNameContaining(keyword, pageable);
+            } else {
+                products = productRepository.findByActiveTrue(pageable);
+            }
         }
 
         return ProductListResponse.builder()

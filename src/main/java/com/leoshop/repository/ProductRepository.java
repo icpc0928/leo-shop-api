@@ -30,6 +30,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.active = true AND p.category = :category AND LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Product> findByActiveTrueAndCategoryAndNameContaining(@Param("category") String category, @Param("keyword") String keyword, Pageable pageable);
 
+    // Admin: all products (include inactive)
+    Page<Product> findByCategory(String category, Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Product> findByNameContaining(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.category = :category AND LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Product> findByCategoryAndNameContaining(@Param("category") String category, @Param("keyword") String keyword, Pageable pageable);
+
     @Query("SELECT DISTINCT p.category FROM Product p WHERE p.category IS NOT NULL ORDER BY p.category")
     List<String> findDistinctCategories();
 }

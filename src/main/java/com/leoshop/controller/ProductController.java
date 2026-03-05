@@ -34,6 +34,16 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductBySlug(slug));
     }
 
+    @GetMapping("/api/admin/products")
+    public ResponseEntity<ProductListResponse> getAllProductsAdmin(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(productService.getAllProducts(category, keyword, sort, page, size, true));
+    }
+
     @PostMapping("/api/admin/products")
     public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest request) {
         return ResponseEntity.ok(productService.createProduct(request));
