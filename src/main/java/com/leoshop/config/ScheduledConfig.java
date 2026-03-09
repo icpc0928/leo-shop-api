@@ -16,7 +16,7 @@ public class ScheduledConfig {
     private final CryptoRateService cryptoRateService;
 
     // Run every 5 minutes
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRateString = "${crypto.rate.refresh-interval:3600000}")
     public void refreshCryptoRates() {
         log.info("Scheduled crypto rate refresh triggered");
         cryptoRateService.refreshApiRates();

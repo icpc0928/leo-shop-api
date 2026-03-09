@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SystemSettingsResponse {
+    private String siteName;
     private String baseCurrency;
     private BigDecimal shippingFee;
     private BigDecimal freeShippingThreshold;

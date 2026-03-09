@@ -68,6 +68,7 @@ public class SystemSettingsService {
     }
 
     public SystemSettingsResponse getSettings() {
+        String siteName = getSetting("site_name", "Leo Shop");
         String baseCurrency = getSetting("base_currency", "TWD");
         BigDecimal shippingFee = new BigDecimal(getSetting("shipping_fee", "100"));
         BigDecimal freeShippingThreshold = new BigDecimal(getSetting("free_shipping_threshold", "2000"));
@@ -77,6 +78,7 @@ public class SystemSettingsService {
                 .toList();
 
         return SystemSettingsResponse.builder()
+                .siteName(siteName)
                 .baseCurrency(baseCurrency)
                 .shippingFee(shippingFee)
                 .freeShippingThreshold(freeShippingThreshold)
@@ -87,6 +89,11 @@ public class SystemSettingsService {
     @Transactional
     public SystemSettingsResponse updateSettings(SystemSettingsRequest request) {
         String oldBaseCurrency = getSetting("base_currency", "TWD");
+
+        // Update site name
+        if (request.getSiteName() != null) {
+            updateSetting("site_name", request.getSiteName());
+        }
 
         // Update base currency if changed
         if (request.getBaseCurrency() != null && !request.getBaseCurrency().equals(oldBaseCurrency)) {

@@ -32,6 +32,11 @@ nowpayments:
   ipn-secret: ${NOWPAYMENTS_IPN_SECRET:sandbox-secret}
   base-url: ${NOWPAYMENTS_BASE_URL:https://api.nowpayments.io/v1}
 
+# Crypto rate refresh interval (ms): 3600000 = 1hr, 300000 = 5min
+crypto:
+  rate:
+    refresh-interval: 3600000
+
 etherscan:
   api-key: ${ETHERSCAN_API_KEY:Q57FT849EX8G9GYBVUDCK19JJ56219T7YE}
 

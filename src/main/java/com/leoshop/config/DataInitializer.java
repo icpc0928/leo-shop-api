@@ -1,11 +1,13 @@
 package com.leoshop.config;
 
 import com.leoshop.model.AdminUser;
+import com.leoshop.model.Category;
 import com.leoshop.model.ExchangeRate;
 import com.leoshop.model.PaymentMethod;
 import com.leoshop.model.Product;
 import com.leoshop.model.User;
 import com.leoshop.repository.AdminUserRepository;
+import com.leoshop.repository.CategoryRepository;
 import com.leoshop.repository.ExchangeRateRepository;
 import com.leoshop.repository.PaymentMethodRepository;
 import com.leoshop.repository.ProductRepository;
@@ -27,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final AdminUserRepository adminUserRepository;
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final ExchangeRateRepository exchangeRateRepository;
     private final PasswordEncoder passwordEncoder;
@@ -139,6 +142,21 @@ public class DataInitializer implements CommandLineRunner {
                 ExchangeRate.builder().currency("HKD").rate(BigDecimal.valueOf(0.24)).build()
             ));
             log.info("Default exchange rates created");
+        }
+
+        // Initialize categories from existing product categories
+        if (categoryRepository.count() == 0 && productRepository.count() > 0) {
+            List<String> distinctCategories = productRepository.findDistinctCategories();
+            int order = 0;
+            for (String categoryName : distinctCategories) {
+                Category category = new Category();
+                category.setName(categoryName);
+                category.setDescription(categoryName + " 分類");
+                category.setSortOrder(order++);
+                category.setActive(true);
+                categoryRepository.save(category);
+            }
+            log.info("Categories initialized from existing products: " + distinctCategories.size() + " categories created");
         }
     }
 

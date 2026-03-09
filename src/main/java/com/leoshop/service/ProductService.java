@@ -4,6 +4,7 @@ import com.leoshop.dto.*;
 import com.leoshop.exception.BadRequestException;
 import com.leoshop.exception.ResourceNotFoundException;
 import com.leoshop.model.Product;
+import com.leoshop.repository.CategoryRepository;
 import com.leoshop.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -17,6 +18,7 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
 
     public ProductListResponse getAllProducts(String category, String keyword, String sort, int page, int size) {
         return getAllProducts(category, keyword, sort, page, size, false);
@@ -106,7 +108,10 @@ public class ProductService {
     }
 
     public List<String> getCategories() {
-        return productRepository.findDistinctCategories();
+        return categoryRepository.findByActiveTrueOrderBySortOrderAsc()
+                .stream()
+                .map(category -> category.getName())
+                .toList();
     }
 
     @Transactional
