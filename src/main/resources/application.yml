@@ -41,6 +41,8 @@ etherscan:
   api-key: ${ETHERSCAN_API_KEY:Q57FT849EX8G9GYBVUDCK19JJ56219T7YE}
 
 app:
+  cors:
+    allowed-origins: http://localhost:3000,http://leo0928.synology.me:13000,https://leo0928.synology.me:13000,http://leo0928.synology.me:18080,https://leo0928.synology.me:18080
   upload:
     dir: uploads/products
   jwt:

@@ -1,0 +1,44 @@
+# Docker / 測試環境用設定
+# 透過環境變數覆蓋（Spring Boot 自動對應 SPRING_DATASOURCE_URL 等）
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://leoshop-db:5432/leoshop}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:leoshop}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+
+nowpayments:
+  api-key: ${NOWPAYMENTS_API_KEY:sandbox-key}
+  ipn-secret: ${NOWPAYMENTS_IPN_SECRET:sandbox-secret}
+  base-url: ${NOWPAYMENTS_BASE_URL:https://api.nowpayments.io/v1}
+
+crypto:
+  rate:
+    refresh-interval: ${CRYPTO_RATE_REFRESH_INTERVAL:3600000}
+
+etherscan:
+  api-key: ${ETHERSCAN_API_KEY:}
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:3000}
+  upload:
+    dir: uploads/products
+  jwt:
+    secret: ${APP_JWT_SECRET:change-me-in-production}
+    expiration: ${APP_JWT_EXPIRATION:86400000}
